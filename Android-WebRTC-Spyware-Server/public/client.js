@@ -1,17 +1,6 @@
-// Dynamic IP detection based on environment
-function getServerURL() {
-  const hostname = window.location.hostname;
-
-  // If accessing via localhost or internal IP, use localhost
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
-    return 'http://localhost:3000';
-  }
-
-  // If accessing via external IP, use the same external IP
-  return `http://${hostname}:3000`;
-}
-
-const socket = io(getServerURL(), {
+// Connect to the same server that served this page (same origin),
+// so the dashboard works whether accessed via localhost, LAN IP, or domain.
+const socket = io(window.location.origin, {
   reconnection: true,
   reconnectionAttempts: 15,
   reconnectionDelay: 1000,
@@ -42,7 +31,9 @@ let activeDownloads = {}; // Map of fileId -> { name, buffer, totalChunks, recei
 const config = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'turn:numb.viagenie.ca', username: 'your@email.com', credential: 'yourpassword' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    // Add a TURN server here if peer-to-peer traversal fails across NAT:
+    // { urls: 'turn:<your-turn-host>:3478', username: '<user>', credential: '<pass>' }
   ]
 };
 
