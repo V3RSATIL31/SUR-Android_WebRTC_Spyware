@@ -117,12 +117,10 @@ public class StreamingSettingsActivity extends AppCompatActivity {
 
 
         IntentFilter filter = new IntentFilter("com.example.wallpaperapplication.PERMISSION_ERROR");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(permissionErrorReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                registerReceiver(permissionErrorReceiver, filter, null, null, Context.RECEIVER_NOT_EXPORTED);
-            }
+            registerReceiver(permissionErrorReceiver, filter);
         }
     }
 

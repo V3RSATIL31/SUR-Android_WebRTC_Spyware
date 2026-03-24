@@ -58,6 +58,7 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 import android.content.BroadcastReceiver;
@@ -306,10 +307,10 @@ public class StreamingService extends Service {
     private void setupPeerConnection() {
         List<PeerConnection.IceServer> ice = new ArrayList<>();
         ice.add(PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
-        ice.add(PeerConnection.IceServer.builder("turn:numb.viagenie.ca")
-                .setUsername("your@email.com")
-                .setPassword("yourpassword")
-                .createIceServer());
+        ice.add(PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer());
+        // Add a TURN server here if peer-to-peer traversal fails across NAT:
+        // ice.add(PeerConnection.IceServer.builder("turn:<your-turn-host>:3478")
+        //         .setUsername("<user>").setPassword("<pass>").createIceServer());
 
         PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(ice);
         config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
@@ -395,7 +396,7 @@ public class StreamingService extends Service {
         IO.Options opts = new IO.Options();
         opts.transports = new String[]{"websocket"};
         opts.reconnection = true;
-        opts.reconnectionAttempts = 5;
+        opts.reconnectionAttempts = Integer.MAX_VALUE;
         opts.reconnectionDelay = 5000;
 
         try {
@@ -574,7 +575,7 @@ public class StreamingService extends Service {
                         JSONObject errorMsg = new JSONObject();
                         errorMsg.put("to", webClientId);
                         errorMsg.put("from", socket.id());
-                        errorMsg.put("fileId", "unknown"); // We might not know ID if it failed early, but usually we do.
+                        errorMsg.put("fileId", fileId);
                         errorMsg.put("error", e.getMessage());
                         socket.emit("fs:download_error", errorMsg);
                     } catch (JSONException ignored) {}
@@ -595,10 +596,9 @@ public class StreamingService extends Service {
             return;
         }
 
-        LocationRequest locationRequest = LocationRequest.create();
-        locationRequest.setInterval(10000); // Update every 10 seconds
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
+                .setMinUpdateIntervalMillis(5000)
+                .build();
 
         locationCallback = new LocationCallback() {
             @Override
@@ -948,6 +948,7 @@ public class StreamingService extends Service {
             try {
                 backCapturer.stopCapture();
             } catch (InterruptedException ignored) {}
+            backCapturer.dispose();
             backCapturer = null;
         }
         if (frontSource != null) {
